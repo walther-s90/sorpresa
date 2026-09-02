@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Una sorpresa especial</title>
+  <!-- Librería externa para la animación de confeti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    /* VARIABLES DE ESTILO ORIGINALE S */
+    :root {
+      --bg-color: #fdf5f0;
+      --card-bg: #ffffff;
+      --accent-color: #d96b6b;
+      --text-main: #4a3b32;
+      --text-muted: #8c7a6b;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background: var(--card-bg);
+      width: 100%;
+      max-width: 400px;
+      padding: 30px 20px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* PANTALLA INTERACTIVA (CORAZÓN) */
+    .heart-btn {
+      font-size: 60px;
+      cursor: pointer;
+      user-select: none;
+      display: inline-block;
+      margin: 20px 0;
+      transition: transform 0.15s ease;
+    }
+    .heart-btn:active {
+      transform: scale(1.25);
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 10px;
+      background: #eee;
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 15px 0 10px;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--accent-color);
+      transition: width 0.2s ease;
+    }
+
+    .status-msg {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      font-style: italic;
+      min-height: 24px;
+    }
+
+    /* PANTALLA DE CONTENIDO FINAL */
+    .hidden {
+      display: none !important;
+    }
+
+    .title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    /* SOBRE INTERACTIVO REALISTA EN 3D CON FRASES DENTRO */
+    .envelope-section {
+      margin: 25px 0 35px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .envelope-wrapper {
+      position: relative;
+      width: 280px;
+      height: 180px;
+      background-color: #e0cebe;
+      border-bottom-left-radius: 10px;
+      border-bottom-right-radius: 10px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      cursor: pointer;
+    }
+
+    /* Solapa Superior */
+    .envelope-wrapper::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 4;
+      border-left: 140px solid transparent;
+      border-right: 140px solid transparent;
+      border-top: 100px solid #d0bea3;
+      transform-origin: top;
+      transition: transform 0.5s ease 0.3s, z-index 0.2s ease 0.3s;
+    }
+
+    /* Solapas Laterales e Inferior */
+    .envelope-wrapper::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 3;
+      border-left: 140px solid #f3e5dc;
+      border-right: 140px solid #f3e5dc;
+      border-bottom: 90px solid #e7d6c8;
+      border-top: 90px solid transparent;
+      border-bottom-left-radius: 10px;
+      border-bottom-right-radius: 10px;
+      pointer-events: none;
+    }
+
+    /* Carta dentro del sobre */
+    .letter {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      width: 260px;
+      height: 160px;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 15px;
+      z-index: 2;
+      transition: transform 0.6s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      border: 1px dashed var(--accent-color);
+    }
+
+    .letter p {
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: var(--text-main);
+      font-style: italic;
+    }
+
+    .envelope-hint {
+      position: absolute;
+      bottom: -25px;
+      width: 100%;
+      font-size: 0.75rem;
+      color: var(--accent-color);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      left: 0;
+    }
+
+    /* Animación de apertura */
+    .envelope-wrapper.open::before {
+      transform: rotateX(180deg);
+      z-index: 1;
+      transition: transform 0.5s ease, z-index 0.2s ease 0.3s;
+    }
+
+    .envelope-wrapper.open .letter {
+      transform: translateY(-110px);
+      z-index: 5;
+    }
+
+    /* CARRUSEL DE FOTOS */
+    .carousel-container {
+      position: relative;
+      width: 100%;
+      margin: 15px 0 25px;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .polaroid {
+      background: #fff;
+      padding: 12px 12px 25px 12px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      border: 1px solid #eaeaea;
+    }
+
+    .polaroid img {
+      width: 100%;
+      height: 280px;
+      object-fit: cover;
+      border-radius: 2px;
+      display: block;
+    }
+
+    .carousel-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.85);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      font-weight: bold;
+      color: var(--text-main);
+      z-index: 2;
+    }
+    .carousel-btn.prev { left: -10px; }
+    .carousel-btn.next { right: -10px; }
+
+    /* REPRODUCTOR DE MÚSICA */
+    .audio-player {
+      background: #faf4f0;
+      padding: 12px 15px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .play-btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .song-info {
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    .song-title {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .song-artist {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+    }
+
+    /* COPAS DE VINO Y ANIMACIÓN */
+    .cheers-section {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      font-size: 2.8rem;
+      margin: 15px 0 5px;
+    }
+
+    .glass-left, .glass-right {
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+
+    @keyframes clinkLeft {
+      0% { transform: translateX(0) rotate(0deg); }
+      50% { transform: translateX(12px) rotate(15deg); }
+      100% { transform: translateX(0) rotate(0deg); }
+    }
+
+    @keyframes clinkRight {
+      0% { transform: translateX(0) rotate(0deg); }
+      50% { transform: translateX(-12px) rotate(-15deg); }
+      100% { transform: translateX(0) rotate(0deg); }
+    }
+
+    .cheers-animating .glass-left {
+      animation: clinkLeft 0.8s ease-in-out infinite;
+    }
+
+    .cheers-animating .glass-right {
+      animation: clinkRight 0.8s ease-in-out infinite;
+    }
+
+    /* MENSAJE FINAL */
+    .message-box {
+      background: #fff8f5;
+      padding: 18px;
+      border-radius: 12px;
+      border-left: 4px solid var(--accent-color);
+      text-align: left;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      color: var(--text-main);
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- FASE 1: INTERACCIÓN CON CORAZÓN -->
+    <div id="step-interactive">
+      <h2 style="font-size: 1.2rem; font-weight: 500;">LINA</h2>
+      <div class="heart-btn" id="heartBtn">❤️</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <p class="status-msg" id="statusMsg">Toca el corazón</p>
+    </div>
+
+    <!-- FASE 2: SORPRESA CON SOBRE, CARRUSEL Y MÚSICA -->
+    <div id="step-content" class="hidden">
+      <h1 class="title">Hoy es el cumpleaños de mi persona favorita</h1>
+      <p class="subtitle">07 de Septiembre</p>
+
+      <!-- SOBRE CON FRAGMENTO QUE SE ABRE AL HACER CLICK -->
+      <div class="envelope-section">
+        <div class="envelope-wrapper" id="envelopeCard" onclick="openEnvelope()">
+          <div class="letter">
+            <p>"Hay personas que llegan y lo cambian todo. Pienso que si el destino estuviera escribiendo la mejor de las historias, habría creado a alguien tan especial como tú."</p>
+          </div>
+          <span class="envelope-hint">✨ Toca para abrir la carta ✨</span>
+        </div>
+      </div>
+
+      <!-- CARRUSEL DE FOTOS (CONSERVANDO TUS 34 IMÁGENES) -->
+      <div class="carousel-container" id="carouselWrapper">
+        <button class="carousel-btn prev" onclick="moveSlide(-1)">&#10094;</button>
+        <div class="polaroid">
+          <img id="carouselImg" src="1 (1).jpeg" alt="Foto juntos">
+        </div>
+        <button class="carousel-btn next" onclick="moveSlide(1)">&#10095;</button>
+      </div>
+
+      <!-- REPRODUCTOR DE MÚSICA -->
+      <div class="audio-player">
+        <button class="play-btn" id="audioToggleBtn" onclick="toggleAudio()">▶</button>
+        <div class="song-info">
+          <div class="song-title">Una Canción Especial</div>
+          <!--<div class="song-artist">Artista Favorito</div>-->
+        </div>
+      </div>
+      <audio id="bgMusic" src="mi_canción.mp3" loop></audio>
+
+      <!-- COPAS DE VINO ANIMADAS -->
+      <div class="cheers-section" id="cheersSection">
+        <span class="glass-left">🍷</span>
+        <span class="glass-right">🍷</span>
+      </div>
+
+      <!-- MENSAJE DEDICATORIA FINAL -->
+      <div class="message-box">
+        <p><strong>¡Por muchos cumpleaños más juntos! ❤️</strong></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // LÓGICA DE INTERACCIÓN (CORAZÓN)
+    let clicks = 0;
+    const totalClicks = 6;
+    const messages = [
+      "Toca el corazón",
+      "Otra vez...",
+      "Algo se está encendiendo...",
+      "Sigue, que esto se calienta",
+      "Un poquito más...",
+      "¡No pares ahora!"
+    ];
+
+    const heartBtn = document.getElementById('heartBtn');
+    const progressFill = document.getElementById('progressFill');
+    const statusMsg = document.getElementById('statusMsg');
+    const stepInteractive = document.getElementById('step-interactive');
+    const stepContent = document.getElementById('step-content');
+    const bgMusic = document.getElementById('bgMusic');
+    const audioToggleBtn = document.getElementById('audioToggleBtn');
+    const cheersSection = document.getElementById('cheersSection');
+
+    // Desbloqueador de audio para celulares
+    let audioUnlocked = false;
+
+    heartBtn.addEventListener('click', () => {
+      if (!audioUnlocked) {
+        bgMusic.play().then(() => {
+          bgMusic.pause();
+          audioUnlocked = true;
+        }).catch(err => console.log("Desbloqueo de audio diferido"));
+      }
+
+      clicks++;
+      let percentage = (clicks / totalClicks) * 100;
+      progressFill.style.width = percentage + '%';
+      
+      if (clicks < totalClicks) {
+        statusMsg.innerText = messages[clicks] || "Sigue presionando...";
+      } else {
+        stepInteractive.classList.add('hidden');
+        stepContent.classList.remove('hidden');
+        
+        // Iniciar la música
+        bgMusic.play().then(() => {
+          audioToggleBtn.innerText = '❚❚';
+        }).catch(err => {
+          console.log("Se requiere activación manual.");
+        });
+
+        // Activar animación de brindis en las copas de vino
+        cheersSection.classList.add('cheers-animating');
+
+        // Disparar lluvia de confeti
+        launchConfetti();
+      }
+    });
+
+    // LÓGICA DE APERTURA DEL SOBRE
+    function openEnvelope() {
+      const envelope = document.getElementById('envelopeCard');
+      envelope.classList.toggle('open');
+    }
+
+    // LÓGICA DE LLUVIA DE CONFETI
+    function launchConfetti() {
+      const duration = 3 * 1000;
+      const end = Date.now() + duration;
+
+      (function frame() {
+        confetti({
+          particleCount: 4,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 }
+        });
+        confetti({
+          particleCount: 4,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 }
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      }());
+    }
+
+    // LÓGICA DEL CARRUSEL DE FOTOS
+    const photos = [
+      "1 (1).jpeg",
+      "1 (2).jpeg",
+      "1 (3).jpeg",
+      "1 (4).jpeg",
+      "1 (7).jpeg",
+      "1 (8).jpeg",
+      "1 (9).jpeg",
+      "1 (10).jpeg",
+      "1 (11).jpeg",
+      "1 (12).jpeg",
+      "1 (13).jpeg",
+      "1 (14).jpeg",
+      "1 (15).jpeg",
+      "1 (16).jpeg",
+      "1 (17).jpeg",
+      "1 (18).jpeg",
+      "1 (19).jpeg",
+      "1 (20).jpeg",
+      "1 (21).jpeg",
+      "1 (22).jpeg",
+      "1 (23).jpeg",
+      "1 (24).jpeg",
+      "1 (25).jpeg",
+      "1 (26).jpeg",
+      "1 (27).jpeg",
+      "1 (28).jpeg",
+      "1 (29).jpeg",
+      "1 (30).jpeg",
+      "1 (31).jpeg",
+      "1 (32).jpeg",
+      "1 (33).jpeg",
+      "1 (34).jpeg"
+    ];
+    let currentPhotoIndex = 0;
+
+    function moveSlide(direction) {
+      currentPhotoIndex += direction;
+      if (currentPhotoIndex < 0) currentPhotoIndex = photos.length - 1;
+      if (currentPhotoIndex >= photos.length) currentPhotoIndex = 0;
+      document.getElementById('carouselImg').src = photos[currentPhotoIndex];
+    }
+
+    // CONTROL DE AUDIO MANUAL
+    function toggleAudio() {
+      if (bgMusic.paused) {
+        bgMusic.play();
+        audioToggleBtn.innerText = '❚❚';
+      } else {
+        bgMusic.pause();
+        audioToggleBtn.innerText = '▶';
+      }
+    }
+  </script>
+</body>
+</html>
